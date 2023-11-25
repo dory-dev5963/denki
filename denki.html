@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electricity Cost Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .input-container {
+      margin-bottom: 20px;
+    }
+  </style>
+  <!-- Chart.js を読み込む -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <h1>Electricity Cost Calculator</h1>
+
+  <div class="input-container">
+    <label for="costPerWatt1">1Whあたりの電気代（円）: </label>
+    <input type="number" id="costPerWatt1" placeholder="1Wあたりの電気代を入力してください">
+  </div>
+
+  <div class="input-container">
+    <label for="numberOfYears1">計算対象の年数: </label>
+    <input type="number" id="numberOfYears1" placeholder="計算対象の年数を入力してください">
+  </div>
+
+  <div class="input-container">
+    <label for="initialCost1">初期費用（円）: </label>
+    <input type="number" id="initialCost1" placeholder="初期費用を入力してください">
+  </div>
+
+  <div class="input-container">
+    <label for="costPerWatt2">1Whあたりの電気代（円）: </label>
+    <input type="number" id="costPerWatt2" placeholder="1Wあたりの電気代を入力してください">
+  </div>
+
+  <div class="input-container">
+    <label for="numberOfYears2">計算対象の年数: </label>
+    <input type="number" id="numberOfYears2" placeholder="計算対象の年数を入力してください">
+  </div>
+
+  <div class="input-container">
+    <label for="initialCost2">初期費用（円）: </label>
+    <input type="number" id="initialCost2" placeholder="初期費用を入力してください">
+  </div>
+
+  <button onclick="calculateAndDrawComparison()">比較</button>
+
+  <div id="totalCost"></div>
+  <div id="costDifference"></div>
+
+  <!-- グラフを表示するキャンバス -->
+  <canvas id="monthlyCostChart" width="400" height="200"></canvas>
+
+  <script>
+    var myChart; // グラフオブジェクトを格納する変数
+
+    function calculateAndDrawComparison() {
+      // 1つ目の入力値を取得
+      var costPerWatt1 = getInputValue("costPerWatt1");
+      var numberOfYears1 = getInputValue("numberOfYears1");
+      var initialCost1 = getInputValue("initialCost1");
+
+      // 2つ目の入力値を取得
+      var costPerWatt2 = getInputValue("costPerWatt2");
+      var numberOfYears2 = getInputValue("numberOfYears2");
+      var initialCost2 = getInputValue("initialCost2");
+
+      // 入力値が正しいかチェック
+      if (!costPerWatt1 || !numberOfYears1 || isNaN(initialCost1) || !costPerWatt2 || !numberOfYears2 || isNaN(initialCost2)) {
+        alert("正しい入力値を入力してください");
+        return;
+      }
+
+      // 1年間の電気代を計算
+      var yearlyCost1 = costPerWatt1 * 24 * 365;
+      var yearlyCost2 = costPerWatt2 * 24 * 365;
+
+      // 総電気代を計算（初期費用を含む）
+      var totalCost1 = yearlyCost1 * numberOfYears1 + initialCost1;
+      var totalCost2 = yearlyCost2 * numberOfYears2 + initialCost2;
+
+      // 結果を表示
+      var totalCostElement = document.getElementById("totalCost");
+      totalCostElement.innerHTML = `
+        <p>1つ目の計算: ${numberOfYears1}年間の電気代は ${totalCost1.toFixed(2)} 円です。</p>
+        <p>2つ目の計算: ${numberOfYears2}年間の電気代は ${totalCost2.toFixed(2)} 円です。</p>
+      `;
+
+      // 差額を計算して表示
+      var costDifferenceElement = document.getElementById("costDifference");
+      var costDifference = totalCost2 - totalCost1;
+      costDifferenceElement.innerHTML = `<p>差額: ${costDifference.toFixed(2)} 円</p>`;
+
+
+      // グラフを描画
+      drawComparisonChart(costPerWatt1, costPerWatt2, yearlyCost1, yearlyCost2, numberOfYears1, numberOfYears2, initialCost1, initialCost2);
+    }
+
+    function drawComparisonChart(costPerWatt1, costPerWatt2, yearlyCost1, yearlyCost2, numberOfYears1, numberOfYears2, initialCost1, initialCost2) {
+      // グラフが既に存在すれば破棄
+      if (myChart) {
+        myChart.destroy();
+      }
+
+      // グラフの描画
+      var ctx = document.getElementById("monthlyCostChart").getContext("2d");
+
+      // 計算対象の年数に応じて月の数を計算
+      var numberOfMonths1 = 12 * numberOfYears1;
+      var numberOfMonths2 = 12 * numberOfYears2;
+
+      // 1つ目の月ごとの電気代データを生成（初期費用と年間の電気代を含む）
+      var monthlyCostData1 = [];
+      var cumulativeCost1 = initialCost1;
+      for (var i = 1; i <= numberOfMonths1; i++) {
+        var cost = ((yearlyCost1 / 12));
+        cumulativeCost1 += cost;
+        monthlyCostData1.push(cumulativeCost1.toFixed(2));
+      }
+
+      // 2つ目の月ごとの電気代データを生成（初期費用と年間の電気代を含む）
+      var monthlyCostData2 = [];
+      var cumulativeCost2 = initialCost2;
+      for (var i = 1; i <= numberOfMonths2; i++) {
+        var cost = ((yearlyCost2 / 12));
+        cumulativeCost2 += cost;
+        monthlyCostData2.push(cumulativeCost2.toFixed(2));
+      }
+
+      // ラベルを生成
+      var months = [];
+      for (var i = 1; i <= Math.max(numberOfMonths1, numberOfMonths2); i++) {
+        months.push(i + "月");
+      }
+
+      // グラフの描画
+      myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: '1つ目の計算',
+            data: monthlyCostData1,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          },
+          {
+            label: '2つ目の計算',
+            data: monthlyCostData2,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function getInputValue(inputId) {
+      var input = document.getElementById(inputId);
+      return parseFloat(input.value);
+    }
+  </script>
+
+</body>
+</html>
